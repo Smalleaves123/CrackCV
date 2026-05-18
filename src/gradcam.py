@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 import torch
 
-from .models import build_model, find_last_conv_layer
+from .models import build_model, find_last_4d_layer
 from .utils import ensure_dir, select_device
 
 
@@ -36,7 +36,7 @@ def main() -> None:
     model.to(device)
     model.eval()
 
-    layer_name, target_layer = find_last_conv_layer(model)
+    layer_name, target_layer = find_last_4d_layer(model)
     print("Using Grad-CAM layer: {0}".format(layer_name))
 
     image_dir = Path(args.image_dir)

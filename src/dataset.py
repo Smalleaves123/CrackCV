@@ -10,6 +10,7 @@ from PIL import Image
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
+from torchvision.transforms import functional as TF
 
 from .utils import CLASS_NAMES, CLASS_TO_INDEX, RAW_TO_CANONICAL, ensure_dir
 
@@ -26,6 +27,7 @@ class DatasetConfig:
     augmentation: bool = False
     seed: int = 42
     img_size: Tuple[int, int] = IMG_SIZE
+    rotation_mode: str = "positive"
 
 
 class CrackDataset(Dataset):
@@ -34,9 +36,13 @@ class CrackDataset(Dataset):
         samples: Sequence[Tuple[Path, int]],
         augmentation: bool,
         img_size: Tuple[int, int],
+        rotation_mode: str = "positive",
     ) -> None:
         self.samples = list(samples)
-        self.transform = build_transform(augmentation=augmentation, img_size=img_size)
+        self.transform = build_transform(
+            augmentation=augmentation,
+            rotation_mode=rotation_mode,
+        )
         self.img_size = img_size
 
     def __len__(self) -> int:
@@ -56,20 +62,33 @@ class CrackDataset(Dataset):
 
 def build_transform(
     augmentation: bool,
-    img_size: Tuple[int, int],
+    rotation_mode: str,
 ) -> transforms.Compose:
-    ops = [transforms.Resize(img_size)]
+    ops = []
     if augmentation:
+        if rotation_mode not in {"positive", "symmetric"}:
+            raise ValueError("Unsupported rotation mode: {0}".format(rotation_mode))
         ops.extend(
             [
                 transforms.RandomHorizontalFlip(),
                 transforms.RandomVerticalFlip(),
                 transforms.ColorJitter(brightness=(0.3, 1.0)),
-                transforms.RandomRotation(45),
+                PositiveRandomRotation(45)
+                if rotation_mode == "positive"
+                else transforms.RandomRotation(45),
             ]
         )
     ops.append(transforms.ToTensor())
     return transforms.Compose(ops)
+
+
+class PositiveRandomRotation:
+    def __init__(self, max_degrees: float) -> None:
+        self.max_degrees = max_degrees
+
+    def __call__(self, image: Image.Image) -> Image.Image:
+        angle = float(transforms.RandomRotation.get_params([0.0, self.max_degrees]))
+        return TF.rotate(image, angle)
 
 
 def create_dataloaders(config: DatasetConfig):
@@ -78,9 +97,24 @@ def create_dataloaders(config: DatasetConfig):
     val_samples = collect_samples(data_dir / "val")
     test_samples = collect_samples(data_dir / "test")
 
-    train_dataset = CrackDataset(train_samples, augmentation=config.augmentation, img_size=config.img_size)
-    val_dataset = CrackDataset(val_samples, augmentation=False, img_size=config.img_size)
-    test_dataset = CrackDataset(test_samples, augmentation=False, img_size=config.img_size)
+    train_dataset = CrackDataset(
+        train_samples,
+        augmentation=config.augmentation,
+        img_size=config.img_size,
+        rotation_mode=config.rotation_mode,
+    )
+    val_dataset = CrackDataset(
+        val_samples,
+        augmentation=False,
+        img_size=config.img_size,
+        rotation_mode=config.rotation_mode,
+    )
+    test_dataset = CrackDataset(
+        test_samples,
+        augmentation=False,
+        img_size=config.img_size,
+        rotation_mode=config.rotation_mode,
+    )
 
     train_loader = DataLoader(
         train_dataset,
@@ -110,7 +144,12 @@ def create_test_loader(
     img_size: Tuple[int, int] = IMG_SIZE,
 ):
     samples = collect_samples(test_dir)
-    dataset = CrackDataset(samples, augmentation=False, img_size=img_size)
+    dataset = CrackDataset(
+        samples,
+        augmentation=False,
+        img_size=img_size,
+        rotation_mode="positive",
+    )
     return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
 
@@ -185,6 +224,32 @@ def prepare_split_dataset(
     return output_dir
 
 
+def prepare_dataset(
+    raw_dir: PathLike,
+    output_dir: PathLike,
+    seed: int = 42,
+    train_size: int = 500,
+    val_size: int = 100,
+    test_size: int = 100,
+) -> Path:
+    raw_dir = Path(raw_dir)
+    output_dir = Path(output_dir)
+
+    if has_split_structure(raw_dir):
+        prepare_presplit_dataset(raw_dir, output_dir)
+        return output_dir
+
+    prepare_split_dataset(
+        raw_dir=raw_dir,
+        output_dir=output_dir,
+        seed=seed,
+        train_size=train_size,
+        val_size=val_size,
+        test_size=test_size,
+    )
+    return output_dir
+
+
 def backup_raw_dataset(
     source_dir: PathLike,
     backup_dir: PathLike,
@@ -204,6 +269,47 @@ def backup_raw_dataset(
 
     shutil.copytree(str(source_dir), str(backup_dir))
     return backup_dir
+
+
+def has_split_structure(data_dir: PathLike) -> bool:
+    data_dir = Path(data_dir)
+    for split in ("train", "val", "test"):
+        split_dir = data_dir / split
+        if not split_dir.exists():
+            return False
+        if not _split_has_supported_classes(split_dir):
+            return False
+    return True
+
+
+def prepare_presplit_dataset(raw_dir: PathLike, output_dir: PathLike) -> Path:
+    raw_dir = Path(raw_dir)
+    output_dir = Path(output_dir)
+
+    if output_dir.exists():
+        for split in ("train", "val", "test"):
+            split_dir = output_dir / split
+            if split_dir.exists():
+                shutil.rmtree(str(split_dir))
+
+    for split in ("train", "val", "test"):
+        source_split_dir = raw_dir / split
+        for source_class_dir in source_split_dir.iterdir():
+            if not source_class_dir.is_dir():
+                continue
+            mapped_name = RAW_TO_CANONICAL.get(source_class_dir.name)
+            if mapped_name is None:
+                continue
+            destination = output_dir / split / mapped_name
+            ensure_dir(destination)
+            files = [
+                path
+                for path in sorted(source_class_dir.iterdir())
+                if path.is_file() and path.suffix.lower() in {".jpg", ".jpeg", ".png"}
+            ]
+            _copy_files(files, destination)
+    _validate_processed_structure(output_dir)
+    return output_dir
 
 
 def _collect_raw_class_files(raw_dir: Path) -> dict:
@@ -229,6 +335,22 @@ def _collect_raw_class_files(raw_dir: Path) -> dict:
                 "Could not find raw files for class {0} under {1}".format(class_name, raw_dir)
             )
     return class_files
+
+
+def _split_has_supported_classes(split_dir: Path) -> bool:
+    present = set()
+    for child in split_dir.iterdir():
+        if child.is_dir() and RAW_TO_CANONICAL.get(child.name) is not None:
+            present.add(RAW_TO_CANONICAL[child.name])
+    return set(CLASS_NAMES).issubset(present)
+
+
+def _validate_processed_structure(output_dir: Path) -> None:
+    for split in ("train", "val", "test"):
+        for class_name in CLASS_NAMES:
+            class_dir = output_dir / split / class_name
+            if not class_dir.exists():
+                raise FileNotFoundError("Missing processed class directory: {0}".format(class_dir))
 
 
 def _copy_files(files: Sequence[Path], destination: Path) -> None:

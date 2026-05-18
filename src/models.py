@@ -93,8 +93,33 @@ def build_model(
     )
 
 
-def find_last_conv_layer(model: nn.Module):
-    modules = [(name, module) for name, module in model.backbone.named_modules() if isinstance(module, nn.Conv2d)]
-    if not modules:
-        raise ValueError("No Conv2d layer found for Grad-CAM.")
-    return modules[-1]
+def find_last_4d_layer(model: nn.Module, input_size: Tuple[int, int, int] = (3, 227, 227)):
+    captured = []
+    hooks = []
+
+    def hook_factory(name: str):
+        def hook(_module, _inputs, output):
+            tensor = output[-1] if isinstance(output, (list, tuple)) else output
+            if isinstance(tensor, torch.Tensor) and tensor.ndim == 4:
+                captured.append((name, _module))
+        return hook
+
+    for name, module in model.backbone.named_modules():
+        if name:
+            hooks.append(module.register_forward_hook(hook_factory(name)))
+
+    was_training = model.backbone.training
+    model.backbone.eval()
+    device = next(model.backbone.parameters()).device
+    with torch.no_grad():
+        dummy = torch.zeros(1, *input_size, device=device)
+        model.backbone.forward_features(dummy)
+
+    for handle in hooks:
+        handle.remove()
+    if was_training:
+        model.backbone.train()
+
+    if not captured:
+        raise ValueError("No 4D feature layer found for Grad-CAM.")
+    return captured[-1]

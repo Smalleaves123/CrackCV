@@ -31,6 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-root", default="outputs")
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--num-workers", type=int, default=0)
+    parser.add_argument("--rotation-mode", choices=["positive", "symmetric"], default="positive")
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--max-epochs", type=int, default=200)
     parser.add_argument("--patience", type=int, default=20)
@@ -63,6 +64,8 @@ def main() -> None:
                 str(args.batch_size),
                 "--num-workers",
                 str(args.num_workers),
+                "--rotation-mode",
+                args.rotation_mode,
                 "--lr",
                 str(args.lr),
                 "--max-epochs",

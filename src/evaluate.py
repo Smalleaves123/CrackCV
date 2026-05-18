@@ -55,6 +55,7 @@ def main() -> None:
                 num_workers=args.num_workers,
                 augmentation=False,
                 seed=args.seed,
+                rotation_mode="positive",
             )
         )
 

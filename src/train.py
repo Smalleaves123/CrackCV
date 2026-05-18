@@ -10,7 +10,7 @@ import torch
 from torch import nn
 from torch.optim import Adam
 
-from .dataset import DatasetConfig, backup_raw_dataset, create_dataloaders, prepare_split_dataset
+from .dataset import DatasetConfig, backup_raw_dataset, create_dataloaders, prepare_dataset
 from .models import build_model
 from .utils import CLASS_NAMES, ensure_dir, save_json, select_device, set_global_seed
 
@@ -29,6 +29,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--augmentation", type=parse_bool, default=True)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--num-workers", type=int, default=0)
+    parser.add_argument("--rotation-mode", choices=["positive", "symmetric"], default="positive")
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--max-epochs", type=int, default=200)
     parser.add_argument("--patience", type=int, default=20)
@@ -52,8 +53,8 @@ def main() -> None:
             backup_dir=backup_dir,
             overwrite=args.refresh_raw_backup,
         )
-        if not _is_prepared_dataset(data_dir):
-            prepare_split_dataset(backup_dir, data_dir, seed=args.seed)
+        if args.refresh_raw_backup or not _is_prepared_dataset(data_dir):
+            prepare_dataset(backup_dir, data_dir, seed=args.seed)
 
     train_loader, val_loader, _ = create_dataloaders(
         DatasetConfig(
@@ -62,6 +63,7 @@ def main() -> None:
             num_workers=args.num_workers,
             augmentation=args.augmentation,
             seed=args.seed,
+            rotation_mode=args.rotation_mode,
         )
     )
 
@@ -104,6 +106,7 @@ def main() -> None:
             "augmentation": args.augmentation,
             "batch_size": args.batch_size,
             "learning_rate": args.lr,
+            "rotation_mode": args.rotation_mode,
             "max_epochs": args.max_epochs,
             "patience": args.patience,
             "seed": args.seed,

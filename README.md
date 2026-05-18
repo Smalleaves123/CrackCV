@@ -18,6 +18,7 @@
 
 - 自动把 `dataset/Positive|Negative` 分层划分为 `train/val/test = 500/100/100`
 - 先完整备份原始 `dataset/` 到 `data/raw_backup/`，再在备份副本上做划分
+- 如果备份数据本身已经带有 `train/val/test`，则直接复用该 split，不再二次重切分
 - 支持 6 个 backbone：
   - `vgg16`
   - `vgg19`
@@ -100,6 +101,7 @@ python -m src.train \
   --augmentation true \
   --batch-size 32 \
   --num-workers 0 \
+  --rotation-mode positive \
   --lr 1e-5 \
   --max-epochs 200 \
   --patience 20 \
@@ -170,6 +172,7 @@ python -m src.gradcam \
 - resize
 - 生成热力图
 - 叠加保存 Grad-CAM 可视化
+- 自动选择 backbone 中最后一个真实的 4D 特征层，而不是简单取最后一个卷积层
 
 ## 跑全部 24 组实验
 
@@ -181,6 +184,7 @@ python scripts/run_all_experiments.py \
   --output-root outputs \
   --batch-size 32 \
   --num-workers 0 \
+  --rotation-mode positive \
   --lr 1e-5 \
   --max-epochs 200 \
   --patience 20 \
@@ -209,7 +213,7 @@ outputs/{backbone}_{strategy}/
   - 水平翻转
   - 垂直翻转
   - 亮度扰动
-  - 旋转 `45` 度
+  - 旋转 `0` 到 `45` 度，默认 `--rotation-mode positive`
 - 验证集和测试集不做随机增强
 - 模型选择标准：`val_accuracy`
 - 评估指标：
@@ -238,3 +242,5 @@ outputs/{backbone}_{strategy}/
 ```bash
 --refresh-raw-backup true
 ```
+
+- 当你刷新原始备份时，脚本也会同步重建 `data/processed/`，避免继续使用旧 split。
