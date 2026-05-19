@@ -12,14 +12,14 @@
 - `crack`
 - `non-crack`
 
-并且全部改为 `PyTorch + OpenCV` 实现，不使用 TensorFlow。
+并且全部改为 `PyTorch + OpenCV` 实现，不使用 TensorFlow，也不依赖 `timm`。当前默认配置已经切回论文原始方向：`ImageNet` 预训练 + 迁移学习。
 
 ## 当前实现内容
 
 - 自动把 `dataset/Positive|Negative` 分层划分为 `train/val/test = 500/100/100`
 - 先完整备份原始 `dataset/` 到 `data/raw_backup/`，再在备份副本上做划分
 - 如果备份数据本身已经带有 `train/val/test`，则直接复用该 split，不再二次重切分
-- 支持 6 个 backbone：
+- 支持论文中的 6 个 backbone：
   - `vgg16`
   - `vgg19`
   - `mobilenetv2`
@@ -87,9 +87,24 @@ pip install -r requirements.txt
 - `non-crack = 0`
 - `crack = 1`
 
+当前 backbone 来源：
+
+- `vgg16`
+- `vgg19`
+- `mobilenetv2`
+- `inceptionv3`
+- `inceptionresnetv2`
+- `xception`
+
+其中：
+
+- `vgg16 / vgg19 / mobilenetv2 / inceptionv3` 使用 `torchvision.models`
+- `inceptionresnetv2 / xception` 使用 `pretrainedmodels`
+- 全部都不依赖 `timm`
+
 ## 训练单个推荐模型
 
-论文最推荐的是 `MobileNetV2 + end-to-end + augmentation`：
+当前默认示例按论文原始设定给出：
 
 ```bash
 python -m src.train \
@@ -102,6 +117,7 @@ python -m src.train \
   --batch-size 32 \
   --num-workers 0 \
   --rotation-mode positive \
+  --use-pretrained true \
   --lr 1e-5 \
   --max-epochs 200 \
   --patience 20 \
@@ -132,6 +148,12 @@ data/processed/
   val/non-crack
   test/crack
   test/non-crack
+```
+
+如果你想改成从零训练，手动关闭预训练：
+
+```bash
+--use-pretrained false
 ```
 
 ## 评估
@@ -185,6 +207,7 @@ python scripts/run_all_experiments.py \
   --batch-size 32 \
   --num-workers 0 \
   --rotation-mode positive \
+  --use-pretrained true \
   --lr 1e-5 \
   --max-epochs 200 \
   --patience 20 \
@@ -222,6 +245,8 @@ outputs/{backbone}_{strategy}/
   - `macro precision`
   - `macro recall`
   - `macro jaccard`
+
+注意：当前默认值 `--use-pretrained true` 才是严格贴近论文的迁移学习设定；只有你手动传 `--use-pretrained false` 时，才会变成从零训练版本。
 
 ## 主要代码入口
 

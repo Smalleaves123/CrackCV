@@ -36,6 +36,7 @@ def main() -> None:
     model = build_model(
         backbone_name=checkpoint["backbone_name"],
         train_backbone=checkpoint.get("train_backbone", True),
+        use_pretrained=checkpoint.get("use_pretrained", True),
     )
     model.load_state_dict(checkpoint["state_dict"])
     model.to(device)

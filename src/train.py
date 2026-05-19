@@ -30,6 +30,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--rotation-mode", choices=["positive", "symmetric"], default="positive")
+    parser.add_argument("--use-pretrained", type=parse_bool, default=True)
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--max-epochs", type=int, default=200)
     parser.add_argument("--patience", type=int, default=20)
@@ -70,6 +71,7 @@ def main() -> None:
     model = build_model(
         backbone_name=args.backbone,
         train_backbone=args.train_backbone,
+        use_pretrained=args.use_pretrained,
     ).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(
@@ -105,6 +107,7 @@ def main() -> None:
             "train_backbone": args.train_backbone,
             "augmentation": args.augmentation,
             "batch_size": args.batch_size,
+            "use_pretrained": args.use_pretrained,
             "learning_rate": args.lr,
             "rotation_mode": args.rotation_mode,
             "max_epochs": args.max_epochs,
@@ -242,6 +245,7 @@ def save_checkpoint(
         {
             "backbone_name": backbone_name,
             "train_backbone": train_backbone,
+            "use_pretrained": getattr(model, "use_pretrained", None),
             "state_dict": model.state_dict(),
             "class_names": CLASS_NAMES,
             "input_size": [3, 227, 227],
