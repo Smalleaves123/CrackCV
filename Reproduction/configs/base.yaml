@@ -1,14 +1,14 @@
 project:
   name: brickwork_crack_detection
   seed: 42
-  device: cpu
+  device: cuda
 data:
   processed_dir: data_work/processed
   train_dir: data_work/processed/train
   val_dir: data_work/processed/val
   test_dir: data_work/processed/test
   image_size: 227
-  num_workers: 0
+  num_workers: 4
   class_names: [non_crack, crack]
 model:
   name: mobilenetv2
@@ -16,16 +16,16 @@ model:
   pretrained: true
   freeze_mode: full_finetune
 training:
-  epochs: 3
-  batch_size: 16
+  epochs: 100
+  batch_size: 32
   optimizer: adam
-  learning_rate: 1.0e-4
+  learning_rate: 1.0e-5
   weight_decay: 0.0
   loss: cross_entropy
-  amp: false
+  amp: true
   early_stopping:
     monitor: val_accuracy
-    patience: 3
+    patience: 20
     mode: max
 augmentation:
   enabled: true
@@ -38,7 +38,7 @@ weights:
   pretrained: true
   offline_mode: false
   local_weights_path: null
-  allow_random_init_when_download_fails: true
+  allow_random_init_when_download_fails: false
   cache_dir: pretrained_weights
 outputs:
   result_dir: results
