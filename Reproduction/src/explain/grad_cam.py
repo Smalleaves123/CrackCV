@@ -10,6 +10,7 @@ from PIL import Image
 from Reproduction.src.data.transforms import build_transforms
 from Reproduction.src.models.model_factory import create_model_from_config
 from Reproduction.src.utils.checkpoints import load_checkpoint
+from Reproduction.src.utils.config import resolve_config_path
 
 
 def _find_last_conv(module: torch.nn.Module):
@@ -32,7 +33,7 @@ def _build_explain_config(config: dict) -> dict:
 
 def generate_gradcam(config: dict, checkpoint_path: str, image_path: str, out_path: str) -> str:
     device = "cuda" if config["project"].get("device") == "cuda" and torch.cuda.is_available() else "cpu"
-    checkpoint = load_checkpoint(checkpoint_path, map_location=device)
+    checkpoint = load_checkpoint(resolve_config_path(config, checkpoint_path), map_location=device)
     model = create_model_from_config(_build_explain_config(config)).to(device)
     model.load_state_dict(checkpoint["model_state_dict"], strict=False)
     model.eval()
@@ -50,7 +51,7 @@ def generate_gradcam(config: dict, checkpoint_path: str, image_path: str, out_pa
     forward_handle = target_layer.register_forward_hook(forward_hook)
     backward_handle = target_layer.register_full_backward_hook(backward_hook)
     transform = build_transforms(config["data"]["image_size"], {**config["augmentation"], "enabled": False}, train=False)
-    image = Image.open(image_path).convert("RGB")
+    image = Image.open(resolve_config_path(config, image_path)).convert("RGB")
     tensor = transform(image).unsqueeze(0).to(device)
     outputs = model(tensor)
     if isinstance(outputs, tuple):
@@ -67,7 +68,8 @@ def generate_gradcam(config: dict, checkpoint_path: str, image_path: str, out_pa
     original = np.array(image).astype(np.float32) / 255.0
     overlay = original.copy()
     overlay[..., 0] = np.clip(overlay[..., 0] + heatmap * 0.7, 0, 1)
-    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+    output_path = resolve_config_path(config, out_path)
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     plt.figure(figsize=(10, 4))
     plt.subplot(1, 3, 1)
     plt.imshow(original)
@@ -82,8 +84,8 @@ def generate_gradcam(config: dict, checkpoint_path: str, image_path: str, out_pa
     plt.axis("off")
     plt.title("Overlay")
     plt.tight_layout()
-    plt.savefig(out_path, dpi=180)
+    plt.savefig(output_path, dpi=180)
     plt.close()
     forward_handle.remove()
     backward_handle.remove()
-    return out_path
+    return str(output_path)

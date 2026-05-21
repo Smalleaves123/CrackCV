@@ -6,7 +6,7 @@ from pathlib import Path
 
 from common import ROOT
 from Reproduction.src.engine.trainer import Trainer
-from Reproduction.src.utils.config import load_config
+from Reproduction.src.utils.config import attach_project_root, load_config
 
 
 def infer_run_dir(config: dict) -> str:
@@ -22,6 +22,7 @@ def main() -> None:
     args = parser.parse_args()
     base_path = ROOT / "Reproduction" / "configs" / "base.yaml"
     config = load_config(args.config, base_path=base_path)
+    config = attach_project_root(config, ROOT)
     if args.epochs is not None:
         config["training"]["epochs"] = args.epochs
     if args.offline:

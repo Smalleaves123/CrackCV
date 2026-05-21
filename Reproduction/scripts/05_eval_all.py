@@ -6,7 +6,7 @@ from pathlib import Path
 
 from common import ROOT
 from Reproduction.src.engine.evaluator import evaluate
-from Reproduction.src.utils.config import load_config
+from Reproduction.src.utils.config import attach_project_root, load_config
 from Reproduction.src.utils.experiment import REPRODUCTION_MODELS, STRATEGIES
 
 
@@ -24,7 +24,7 @@ def main() -> None:
             config_path = ROOT / "Reproduction" / "results" / model_name / strategy / "logs" / "config.yaml"
             if not config_path.exists():
                 continue
-            config = load_config(config_path)
+            config = attach_project_root(load_config(config_path), ROOT)
             checkpoint = Path(config["runtime"]["run_dir"]) / "checkpoints" / "best.pt"
             if not checkpoint.exists():
                 continue

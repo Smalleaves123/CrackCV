@@ -28,8 +28,30 @@ def load_config(config_path: str | Path, base_path: str | Path | None = None) ->
     return config
 
 
+def attach_project_root(config: dict[str, Any], project_root: str | Path) -> dict[str, Any]:
+    config.setdefault("runtime", {})
+    config["runtime"]["project_root"] = str(Path(project_root).resolve())
+    return config
+
+
+def resolve_config_path(config: dict[str, Any], value: str | Path | None) -> Path | None:
+    if value is None:
+        return None
+    path = Path(value)
+    if path.is_absolute():
+        return path
+    project_root = config.get("runtime", {}).get("project_root")
+    if project_root:
+        return Path(project_root) / path
+    return path
+
+
 def save_config(config: dict[str, Any], output_path: str | Path) -> None:
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    serializable = deepcopy(config)
+    runtime = serializable.get("runtime")
+    if isinstance(runtime, dict):
+        runtime.pop("project_root", None)
     with output_path.open("w", encoding="utf-8") as handle:
-        yaml.safe_dump(config, handle, sort_keys=False)
+        yaml.safe_dump(serializable, handle, sort_keys=False)

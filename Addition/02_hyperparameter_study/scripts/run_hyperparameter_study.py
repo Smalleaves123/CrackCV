@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from Reproduction.src.engine.trainer import Trainer
-from Reproduction.src.utils.config import load_config
+from Reproduction.src.utils.config import attach_project_root, load_config
 
 
 def main() -> None:
@@ -23,8 +23,8 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--offline", action="store_true")
     args = parser.parse_args()
-    study_config = load_config(args.config)
-    base_config = load_config(ROOT / "Reproduction" / "configs" / "base.yaml")
+    study_config = attach_project_root(load_config(args.config), ROOT)
+    base_config = attach_project_root(load_config(ROOT / "Reproduction" / "configs" / "base.yaml"), ROOT)
     completed = []
     for learning_rate in study_config["study"]["learning_rates"]:
         for batch_size in study_config["study"]["batch_sizes"]:

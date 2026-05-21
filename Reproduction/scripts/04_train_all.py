@@ -5,7 +5,7 @@ import json
 
 from common import ROOT
 from Reproduction.src.engine.trainer import Trainer
-from Reproduction.src.utils.config import load_config
+from Reproduction.src.utils.config import attach_project_root, load_config
 from Reproduction.src.utils.experiment import REPRODUCTION_MODELS, STRATEGIES, apply_runtime, apply_strategy, apply_training_overrides
 
 
@@ -28,7 +28,7 @@ def main() -> None:
             if args.limit is not None and count >= args.limit:
                 print(json.dumps(completed, indent=2))
                 return
-            config = load_config(model_config, base_path=base_path)
+            config = attach_project_root(load_config(model_config, base_path=base_path), ROOT)
             config = apply_training_overrides(config, epochs=args.epochs, offline=args.offline)
             config = apply_strategy(config, strategy)
             config = apply_runtime(config, ROOT / "Reproduction" / "results" / model_name / strategy)

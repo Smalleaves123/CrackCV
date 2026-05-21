@@ -10,7 +10,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from Reproduction.src.engine.trainer import Trainer
-from Reproduction.src.utils.config import load_config
+from Reproduction.src.utils.config import attach_project_root, load_config
 from Reproduction.src.utils.experiment import EXTRA_MODELS, STRATEGIES, apply_runtime, apply_strategy, apply_training_overrides
 
 
@@ -28,7 +28,7 @@ def main() -> None:
     for model_name in models:
         config_path = ROOT / "Addition" / "01_extra_models" / "configs" / f"{model_name}.yaml"
         for strategy in strategies:
-            config = load_config(config_path, base_path=base_config)
+            config = attach_project_root(load_config(config_path, base_path=base_config), ROOT)
             config = apply_training_overrides(config, epochs=args.epochs, offline=args.offline)
             config = apply_strategy(config, strategy)
             config = apply_runtime(config, ROOT / "Addition" / "01_extra_models" / "results" / model_name / strategy)

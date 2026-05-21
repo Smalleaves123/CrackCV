@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 from Reproduction.src.data.dataset import create_imagefolder
 from Reproduction.src.models.model_factory import create_model_from_config
 from Reproduction.src.utils.checkpoints import load_checkpoint
+from Reproduction.src.utils.config import resolve_config_path
 from Reproduction.src.utils.metrics import compute_classification_metrics
 from Reproduction.src.utils.plotting import plot_confusion_matrix
 
@@ -27,12 +28,12 @@ def _build_eval_config(config: dict) -> dict:
 
 def evaluate(config: dict, checkpoint_path: str, split: str = "test") -> dict:
     device = "cuda" if config["project"].get("device") == "cuda" and torch.cuda.is_available() else "cpu"
-    checkpoint = load_checkpoint(checkpoint_path, map_location=device)
+    checkpoint = load_checkpoint(resolve_config_path(config, checkpoint_path), map_location=device)
     model = create_model_from_config(_build_eval_config(config)).to(device)
     model.load_state_dict(checkpoint["model_state_dict"], strict=False)
     model.eval()
     dataset = create_imagefolder(
-        data_dir=config["data"][f"{split}_dir"],
+        data_dir=resolve_config_path(config, config["data"][f"{split}_dir"]),
         image_size=config["data"]["image_size"],
         augmentation={**config["augmentation"], "enabled": False},
         train=False,
@@ -63,7 +64,7 @@ def evaluate(config: dict, checkpoint_path: str, split: str = "test") -> dict:
                     }
                 )
     metrics = compute_classification_metrics(y_true, y_pred)
-    run_dir = Path(config["runtime"]["run_dir"])
+    run_dir = resolve_config_path(config, config["runtime"]["run_dir"])
     metrics_dir = run_dir / "metrics"
     figures_dir = run_dir / "figures"
     metrics_dir.mkdir(parents=True, exist_ok=True)

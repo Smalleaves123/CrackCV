@@ -1,6 +1,6 @@
 # Reproduction
 
-完整运行顺序和全部实验说明见 [RUN_ALL_EXPERIMENTS.md](/Users/aiziqi/Desktop/CVFinal/RUN_ALL_EXPERIMENTS.md:1)。
+完整运行顺序和全部实验说明见 [RUN_ALL_EXPERIMENTS.md](../RUN_ALL_EXPERIMENTS.md)。
 
 常用命令：
 

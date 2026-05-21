@@ -5,7 +5,7 @@ import json
 
 from common import ROOT
 from Reproduction.src.engine.predictor import predict_image
-from Reproduction.src.utils.config import load_config
+from Reproduction.src.utils.config import attach_project_root, load_config
 
 
 def main() -> None:
@@ -14,7 +14,7 @@ def main() -> None:
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--image", required=True)
     args = parser.parse_args()
-    config = load_config(args.config)
+    config = attach_project_root(load_config(args.config), ROOT)
     config.setdefault("weights", {})
     config["weights"]["pretrained"] = False
     config["weights"]["offline_mode"] = True

@@ -9,6 +9,7 @@ import torch.nn as nn
 from torchvision import models
 
 from Reproduction.src.models.model_utils import SmallCNN, freeze_all, unfreeze_last_n_children
+from Reproduction.src.utils.config import resolve_config_path
 
 try:
     import timm
@@ -193,11 +194,13 @@ def create_model_from_config(config: dict) -> nn.Module:
     model_cfg = config["model"]
     freeze_mode = model_cfg.get("freeze_mode", "full_finetune")
     offline_mode = weights_cfg.get("offline_mode", False)
+    local_weights_path = weights_cfg.get("local_weights_path")
+    resolved_local_weights = resolve_config_path(config, local_weights_path) if local_weights_path else None
     return create_model(
         model_name=model_cfg["name"],
         num_classes=model_cfg.get("num_classes", 2),
         pretrained=bool(weights_cfg.get("pretrained", True) and not offline_mode),
-        local_weights_path=weights_cfg.get("local_weights_path"),
+        local_weights_path=None if resolved_local_weights is None else str(resolved_local_weights),
         freeze_backbone=freeze_mode == "linear_probe",
         partial_unfreeze="last_blocks" if freeze_mode == "partial_finetune" else None,
         allow_random_init_when_download_fails=weights_cfg.get("allow_random_init_when_download_fails", False),

@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-os.environ.setdefault("MPLCONFIGDIR", "/private/tmp/mplconfig")
+os.environ.setdefault("MPLCONFIGDIR", str(Path(".cache") / "matplotlib"))
 
 import matplotlib.pyplot as plt
 import pandas as pd

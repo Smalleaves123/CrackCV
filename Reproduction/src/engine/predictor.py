@@ -8,6 +8,7 @@ from PIL import Image
 from Reproduction.src.data.transforms import build_transforms
 from Reproduction.src.models.model_factory import create_model_from_config
 from Reproduction.src.utils.checkpoints import load_checkpoint
+from Reproduction.src.utils.config import resolve_config_path
 
 
 def _build_predict_config(config: dict) -> dict:
@@ -23,12 +24,12 @@ def _build_predict_config(config: dict) -> dict:
 
 def predict_image(config: dict, checkpoint_path: str, image_path: str) -> dict:
     device = "cuda" if config["project"].get("device") == "cuda" and torch.cuda.is_available() else "cpu"
-    checkpoint = load_checkpoint(checkpoint_path, map_location=device)
+    checkpoint = load_checkpoint(resolve_config_path(config, checkpoint_path), map_location=device)
     model = create_model_from_config(_build_predict_config(config)).to(device)
     model.load_state_dict(checkpoint["model_state_dict"], strict=False)
     model.eval()
     transform = build_transforms(config["data"]["image_size"], {**config["augmentation"], "enabled": False}, train=False)
-    image = Image.open(Path(image_path)).convert("RGB")
+    image = Image.open(resolve_config_path(config, image_path)).convert("RGB")
     tensor = transform(image).unsqueeze(0).to(device)
     with torch.no_grad():
         outputs = model(tensor)

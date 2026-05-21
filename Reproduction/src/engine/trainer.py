@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from Reproduction.src.data.dataset import create_imagefolder
 from Reproduction.src.models.model_factory import create_model_from_config
 from Reproduction.src.utils.checkpoints import save_checkpoint
-from Reproduction.src.utils.config import save_config
+from Reproduction.src.utils.config import resolve_config_path, save_config
 from Reproduction.src.utils.metrics import compute_classification_metrics
 from Reproduction.src.utils.plotting import plot_curve
 from Reproduction.src.utils.seed import set_seed
@@ -26,7 +26,9 @@ class Trainer:
         set_seed(config["project"]["seed"])
         requested_device = config["project"].get("device", "cpu")
         self.device = "cuda" if requested_device == "cuda" and torch.cuda.is_available() else "cpu"
-        self.run_dir = Path(config["runtime"]["run_dir"])
+        self.run_dir = resolve_config_path(config, config["runtime"]["run_dir"])
+        if self.run_dir is None:
+            raise RuntimeError("runtime.run_dir must be configured")
         self.checkpoint_dir = self.run_dir / "checkpoints"
         self.metrics_dir = self.run_dir / "metrics"
         self.figures_dir = self.run_dir / "figures"
@@ -54,7 +56,7 @@ class Trainer:
 
     def _create_loader(self, split: str, train: bool) -> DataLoader:
         dataset = create_imagefolder(
-            data_dir=self.config["data"][f"{split}_dir"],
+            data_dir=resolve_config_path(self.config, self.config["data"][f"{split}_dir"]),
             image_size=self.config["data"]["image_size"],
             augmentation=self.config["augmentation"],
             train=train,

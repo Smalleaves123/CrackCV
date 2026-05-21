@@ -10,7 +10,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from Reproduction.src.engine.trainer import Trainer
-from Reproduction.src.utils.config import load_config
+from Reproduction.src.utils.config import attach_project_root, load_config
 
 
 def main() -> None:
@@ -25,7 +25,7 @@ def main() -> None:
     }
     completed = []
     for tag, config_path in configs.items():
-        config = load_config(config_path, base_path=base_config)
+        config = attach_project_root(load_config(config_path, base_path=base_config), ROOT)
         config["training"]["epochs"] = args.epochs
         if args.offline:
             config["weights"]["offline_mode"] = True

@@ -3,10 +3,10 @@ project:
   seed: 42
   device: cpu
 data:
-  processed_dir: /Users/aiziqi/Desktop/CVFinal/data_work/processed
-  train_dir: /Users/aiziqi/Desktop/CVFinal/data_work/processed/train
-  val_dir: /Users/aiziqi/Desktop/CVFinal/data_work/processed/val
-  test_dir: /Users/aiziqi/Desktop/CVFinal/data_work/processed/test
+  processed_dir: data_work/processed
+  train_dir: data_work/processed/train
+  val_dir: data_work/processed/val
+  test_dir: data_work/processed/test
   image_size: 227
   num_workers: 0
   class_names: [non_crack, crack]
@@ -39,7 +39,7 @@ weights:
   offline_mode: false
   local_weights_path: null
   allow_random_init_when_download_fails: true
-  cache_dir: /Users/aiziqi/Desktop/CVFinal/pretrained_weights
+  cache_dir: pretrained_weights
 outputs:
   result_dir: results
   save_best: true
@@ -49,4 +49,4 @@ outputs:
   save_predictions: true
 runtime:
   strategy: full_finetune_aug
-  run_dir: /Users/aiziqi/Desktop/CVFinal/Reproduction/results/mobilenetv2/full_finetune_aug
+  run_dir: Reproduction/results/mobilenetv2/full_finetune_aug
