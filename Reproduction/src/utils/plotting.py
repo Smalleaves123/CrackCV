@@ -25,6 +25,32 @@ def plot_curve(csv_path: str | Path, x: str, y: str, out_path: str | Path, title
     plt.close()
 
 
+def plot_train_val_curve(
+    csv_path: str | Path,
+    x: str,
+    train_y: str,
+    val_y: str,
+    out_path: str | Path,
+    title: str,
+    ylabel: str,
+) -> None:
+    df = pd.read_csv(csv_path)
+    if df.empty or train_y not in df.columns or val_y not in df.columns:
+        return
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(6.5, 4.5))
+    plt.plot(df[x], df[train_y], marker="o", label="Train")
+    plt.plot(df[x], df[val_y], marker="s", label="Val")
+    plt.title(title)
+    plt.xlabel(x)
+    plt.ylabel(ylabel)
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=180)
+    plt.close()
+
+
 def plot_confusion_matrix(matrix: list[list[int]], class_names: list[str], out_path: str | Path) -> None:
     plt.figure(figsize=(5, 4))
     plt.imshow(matrix, cmap="Blues")

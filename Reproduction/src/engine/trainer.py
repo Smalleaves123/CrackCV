@@ -16,7 +16,7 @@ from Reproduction.src.utils.amp import autocast_context, build_grad_scaler
 from Reproduction.src.utils.checkpoints import save_checkpoint
 from Reproduction.src.utils.config import resolve_config_path, save_config
 from Reproduction.src.utils.metrics import compute_classification_metrics
-from Reproduction.src.utils.plotting import plot_curve
+from Reproduction.src.utils.plotting import plot_train_val_curve
 from Reproduction.src.utils.seed import set_seed
 
 
@@ -163,6 +163,30 @@ class Trainer:
 
     def _finalize_plots(self) -> None:
         csv_path = self.logs_dir / "train_log.csv"
-        plot_curve(csv_path, "epoch", "train_loss", self.figures_dir / "loss_curve.png", "Train Loss")
-        plot_curve(csv_path, "epoch", "val_accuracy", self.figures_dir / "accuracy_curve.png", "Validation Accuracy")
-        plot_curve(csv_path, "epoch", "val_f1", self.figures_dir / "f1_curve.png", "Validation F1")
+        plot_train_val_curve(
+            csv_path,
+            "epoch",
+            "train_loss",
+            "val_loss",
+            self.figures_dir / "loss_curve.png",
+            "Train vs Val Loss",
+            "Loss",
+        )
+        plot_train_val_curve(
+            csv_path,
+            "epoch",
+            "train_accuracy",
+            "val_accuracy",
+            self.figures_dir / "accuracy_curve.png",
+            "Train vs Val Accuracy",
+            "Accuracy",
+        )
+        plot_train_val_curve(
+            csv_path,
+            "epoch",
+            "train_f1",
+            "val_f1",
+            self.figures_dir / "f1_curve.png",
+            "Train vs Val F1",
+            "F1 Score",
+        )
