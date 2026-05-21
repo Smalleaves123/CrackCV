@@ -57,6 +57,8 @@ def plot_confusion_matrix(matrix: list[list[int]], class_names: list[str], out_p
     plt.title("Confusion Matrix")
     plt.xticks(range(len(class_names)), class_names)
     plt.yticks(range(len(class_names)), class_names)
+    plt.xlabel("Predicted Label")
+    plt.ylabel("True Label")
     for i, row in enumerate(matrix):
         for j, value in enumerate(row):
             plt.text(j, i, str(value), ha="center", va="center")
