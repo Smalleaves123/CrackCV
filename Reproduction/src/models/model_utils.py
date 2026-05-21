@@ -35,3 +35,13 @@ def unfreeze_last_n_children(module: nn.Module, num_children: int) -> None:
     for child in children[-num_children:]:
         for param in child.parameters():
             param.requires_grad = True
+
+
+def unfreeze_module(module: nn.Module | None) -> bool:
+    if module is None or not isinstance(module, nn.Module):
+        return False
+    updated = False
+    for param in module.parameters():
+        param.requires_grad = True
+        updated = True
+    return updated

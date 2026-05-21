@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 from torchvision import models
 
-from Reproduction.src.models.model_utils import SmallCNN, freeze_all, unfreeze_last_n_children
+from Reproduction.src.models.model_utils import SmallCNN, freeze_all, unfreeze_last_n_children, unfreeze_module
 from Reproduction.src.utils.config import resolve_config_path
 
 try:
@@ -134,21 +134,30 @@ def _load_local_weights(model: nn.Module, local_weights_path: str) -> None:
     model.load_state_dict(state, strict=False)
 
 
+def _unfreeze_classification_head(model: nn.Module) -> None:
+    updated = False
+    if hasattr(model, "get_classifier"):
+        classifier_ref = model.get_classifier()
+        if isinstance(classifier_ref, str):
+            updated = unfreeze_module(getattr(model, classifier_ref, None)) or updated
+        else:
+            updated = unfreeze_module(classifier_ref) or updated
+    for name in ["classifier", "fc", "head", "classif", "last_linear", "AuxLogits"]:
+        updated = unfreeze_module(getattr(model, name, None)) or updated
+    if not updated:
+        raise RuntimeError(
+            "Unable to identify a trainable classification head for freeze_mode=linear_probe. "
+            "Add the model-specific head name to model_factory._unfreeze_classification_head."
+        )
+
+
 def _apply_freeze_mode(model: nn.Module, freeze_backbone: bool, partial_unfreeze: str | None) -> None:
     if freeze_backbone:
         freeze_all(model)
-        for name in ["classifier", "fc", "head", "AuxLogits"]:
-            module = getattr(model, name, None)
-            if module is not None:
-                for param in module.parameters():
-                    param.requires_grad = True
+        _unfreeze_classification_head(model)
     if partial_unfreeze:
         freeze_all(model)
-        for name in ["classifier", "fc", "head", "AuxLogits"]:
-            module = getattr(model, name, None)
-            if module is not None:
-                for param in module.parameters():
-                    param.requires_grad = True
+        _unfreeze_classification_head(model)
         unfreeze_last_n_children(model, 2)
 
 
