@@ -1,0 +1,7 @@
+models:
+  - vgg16
+  - vgg19
+  - mobilenetv2
+  - inceptionv3
+  - inception_resnet_v2
+  - xception

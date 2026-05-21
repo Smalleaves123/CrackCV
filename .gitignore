@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# Local environment files
+.env
+
+# Data artifacts
+data_work/
+
+# Training outputs
+Reproduction/results/
+Addition/01_extra_models/results/
+Addition/02_hyperparameter_study/results/
+Addition/03_train_from_scratch/results/
+report_assets/tables/
+report_assets/figures/
+report_assets/demo_images/
+
+# Cached weights
+pretrained_weights/torch/
+pretrained_weights/timm/
+pretrained_weights/huggingface/
+pretrained_weights/manual/
+
+# Notebook checkpoints
+.ipynb_checkpoints/

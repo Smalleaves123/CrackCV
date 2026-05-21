@@ -1,0 +1,4 @@
+model:
+  name: mobilenetv2
+  num_classes: 2
+  freeze_mode: full_finetune

@@ -1,0 +1,7 @@
+model:
+  name: small_cnn
+  num_classes: 2
+  freeze_mode: full_finetune
+weights:
+  pretrained: false
+  offline_mode: true

@@ -1,0 +1,6 @@
+study:
+  model_name: mobilenetv2
+  learning_rates: [1.0e-5, 5.0e-5, 1.0e-4, 5.0e-4]
+  batch_sizes: [8, 16, 32]
+  freeze_mode: full_finetune
+  augmentation_enabled: true

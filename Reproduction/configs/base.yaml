@@ -1,0 +1,52 @@
+project:
+  name: brickwork_crack_detection
+  seed: 42
+  device: cpu
+data:
+  processed_dir: /Users/aiziqi/Desktop/CVFinal/data_work/processed
+  train_dir: /Users/aiziqi/Desktop/CVFinal/data_work/processed/train
+  val_dir: /Users/aiziqi/Desktop/CVFinal/data_work/processed/val
+  test_dir: /Users/aiziqi/Desktop/CVFinal/data_work/processed/test
+  image_size: 227
+  num_workers: 0
+  class_names: [non_crack, crack]
+model:
+  name: mobilenetv2
+  num_classes: 2
+  pretrained: true
+  freeze_mode: full_finetune
+training:
+  epochs: 3
+  batch_size: 16
+  optimizer: adam
+  learning_rate: 1.0e-4
+  weight_decay: 0.0
+  loss: cross_entropy
+  amp: false
+  early_stopping:
+    monitor: val_accuracy
+    patience: 3
+    mode: max
+augmentation:
+  enabled: true
+  horizontal_flip: true
+  vertical_flip: true
+  rotation_degrees: 45
+  brightness_min: 0.3
+  brightness_max: 1.0
+weights:
+  pretrained: true
+  offline_mode: false
+  local_weights_path: null
+  allow_random_init_when_download_fails: true
+  cache_dir: /Users/aiziqi/Desktop/CVFinal/pretrained_weights
+outputs:
+  result_dir: results
+  save_best: true
+  save_last: true
+  save_curves: true
+  save_confusion_matrix: true
+  save_predictions: true
+runtime:
+  strategy: full_finetune_aug
+  run_dir: /Users/aiziqi/Desktop/CVFinal/Reproduction/results/mobilenetv2/full_finetune_aug
