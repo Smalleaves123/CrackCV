@@ -66,16 +66,38 @@ data_work/splits/test.csv
 ```bash
 python3 Reproduction/scripts/02_train_single.py --config Reproduction/configs/mobilenetv2.yaml --strategy full_finetune_aug --epochs 5
 python3 Reproduction/scripts/03_eval_single.py --config Reproduction/results/mobilenetv2/full_finetune_aug/logs/config.yaml --checkpoint Reproduction/results/mobilenetv2/full_finetune_aug/checkpoints/best.pt --split test
-python3 Reproduction/scripts/06_predict_image.py --config Reproduction/results/mobilenetv2/full_finetune_aug/logs/config.yaml --checkpoint Reproduction/results/mobilenetv2/full_finetune_aug/checkpoints/best.pt --image data_work/processed/test/crack/dataset_Positive_00001.jpg
-python3 Reproduction/scripts/07_gradcam.py --config Reproduction/results/mobilenetv2/full_finetune_aug/logs/config.yaml --checkpoint Reproduction/results/mobilenetv2/full_finetune_aug/checkpoints/best.pt --image data_work/processed/test/crack/dataset_Positive_00001.jpg
+python3 Reproduction/scripts/06_predict_image.py --config Reproduction/results/mobilenetv2/full_finetune_aug/logs/config.yaml --checkpoint Reproduction/results/mobilenetv2/full_finetune_aug/checkpoints/best.pt --image data_work/processed/test/crack/raw_backup_Positive_00001.jpg
+python3 Reproduction/scripts/07_gradcam.py --config Reproduction/results/mobilenetv2/full_finetune_aug/logs/config.yaml --checkpoint Reproduction/results/mobilenetv2/full_finetune_aug/checkpoints/best.pt --image data_work/processed/test/crack/raw_backup_Positive_00001.jpg
 ```
 
 如果这里没问题，再进入全量实验。
 
 说明：
 
-- 当前 `01_prepare_dataset.py` 会把处理后的文件名改成带来源目录前缀的稳定名字，例如 `dataset_Positive_00001.jpg`
+- 当前 `01_prepare_dataset.py` 会把处理后的文件名改成带来源目录前缀的稳定名字，例如 `raw_backup_Positive_00001.jpg`
 - 如果你的 `data_work/processed/` 是用更早版本脚本生成的，文件名可能不同，先用 `ls data_work/processed/test/crack/` 看实际名字
+
+`02_train_single.py` 现在会真实应用四种策略，不只是改输出目录名。可选值只有这四个：
+
+- `full_finetune_aug`
+- `full_finetune_no_aug`
+- `linear_probe_aug`
+- `linear_probe_no_aug`
+
+例如你想手动只跑 `mobilenetv2 + linear_probe_no_aug`：
+
+```bash
+python3 Reproduction/scripts/02_train_single.py \
+  --config Reproduction/configs/mobilenetv2.yaml \
+  --strategy linear_probe_no_aug \
+  --epochs 5
+```
+
+这条命令会同时把：
+
+- `model.freeze_mode` 设为 `linear_probe`
+- `augmentation.enabled` 设为 `false`
+- 输出目录设为 `Reproduction/results/mobilenetv2/linear_probe_no_aug/`
 
 ## 5. 运行 Reproduction 全部主实验
 
@@ -97,6 +119,33 @@ python3 Reproduction/scripts/08_collect_results.py
 
 ```bash
 python3 Reproduction/scripts/04_train_all.py --models mobilenetv2 vgg16 --strategies full_finetune_aug linear_probe_aug --epochs 100
+```
+
+如果你不想一次性跑 24 组，推荐把 `04_train_all.py` 当成“批量跑子集”的入口来用。例如：
+
+只跑一个模型的四种策略：
+
+```bash
+python3 Reproduction/scripts/04_train_all.py --models mobilenetv2 --epochs 100
+```
+
+只跑两个模型里的两种策略：
+
+```bash
+python3 Reproduction/scripts/04_train_all.py \
+  --models mobilenetv2 vgg16 \
+  --strategies full_finetune_aug linear_probe_no_aug \
+  --epochs 100
+```
+
+只想先限制前几组做 smoke test：
+
+```bash
+python3 Reproduction/scripts/04_train_all.py \
+  --models mobilenetv2 vgg16 \
+  --strategies full_finetune_aug full_finetune_no_aug linear_probe_aug linear_probe_no_aug \
+  --epochs 3 \
+  --limit 2
 ```
 
 主要输出目录：
@@ -189,6 +238,13 @@ Addition/03_train_from_scratch/results/mobilenetv2_pretrained/
 9. `Addition/01_extra_models/scripts/run_extra_models.py`
 10. `Addition/02_hyperparameter_study/scripts/run_hyperparameter_study.py`
 11. `Addition/03_train_from_scratch/scripts/run_scratch_comparison.py`
+
+如果你平时不会一次性全跑，建议按下面这个更实用的节奏：
+
+1. `02_train_single.py` 先确认单组策略正确
+2. `04_train_all.py --models <one_model>` 跑单个模型的四组
+3. `04_train_all.py --models <two_or_three_models>` 逐步扩展
+4. 最后再补齐剩余模型，凑满 24 组
 
 ## 10. 常见注意事项
 
