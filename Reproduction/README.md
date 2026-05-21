@@ -13,6 +13,7 @@ python3 Reproduction/scripts/06_predict_image.py --config Reproduction/results/m
 python3 Reproduction/scripts/04_train_all.py --models mobilenetv2 vgg16 --strategies full_finetune_aug linear_probe_no_aug --epochs 100
 python3 Reproduction/scripts/05_eval_all.py --split test
 python3 Reproduction/scripts/08_collect_results.py
+python3 Reproduction/scripts/09_merge_results_bundle.py --input Reproduction/results --output-dir report_assets/shared_results_merge
 ```
 
 环境变量建议：
@@ -35,6 +36,7 @@ export TIMM_HOME=./pretrained_weights/timm
 - `04_train_all.py` 负责六个论文模型乘四种策略的 24 组训练
 - `05_eval_all.py` 负责批量测试集评估
 - `08_collect_results.py` 负责把 `Reproduction/results/` 汇总到 `report_assets/`
+- `09_merge_results_bundle.py` 负责对已经打包或转发的 `results/` 目录做二次整合，输出统一 summary 和混淆矩阵图
 
 四种策略含义：
 

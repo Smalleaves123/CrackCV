@@ -239,6 +239,7 @@ report_assets/figures/model_accuracy_comparison.png
 report_assets/figures/model_f1_comparison.png
 report_assets/figures/parameter_vs_accuracy.png
 report_assets/figures/best_strategy_per_model.png
+report_assets/figures/confusion_matrices/*.png
 ```
 
 ## 6. 运行 Addition 1：Extra Models
@@ -335,3 +336,51 @@ Addition/03_train_from_scratch/results/mobilenetv2_pretrained/
 - 如果你要完整保留论文对比意义，主实验、额外模型和迁移学习对比都建议保留预训练模式
 - 当前主汇总脚本只汇总 `Reproduction/`，`Addition/` 结果需要分别查看各自 `results/`
 - AMP 现在同时兼容新旧 PyTorch；如果你仍看到 `torch.amp` 或 `torch.cuda.amp` 相关 warning，说明远端机器跑的不是当前代码版本
+
+## 11. 把 results 发给别人做整合
+
+如果你后面要把 `Reproduction/results/` 文件夹打包发给别人，推荐流程是：
+
+先在你的机器上打包：
+
+```bash
+tar -czf reproduction_results.tar.gz Reproduction/results
+```
+
+或者：
+
+```bash
+zip -r reproduction_results.zip Reproduction/results
+```
+
+对方拿到之后有两种用法。
+
+直接针对解压后的目录整合：
+
+```bash
+python3 Reproduction/scripts/09_merge_results_bundle.py \
+  --input Reproduction/results \
+  --output-dir report_assets/shared_results_merge
+```
+
+直接针对 zip 包整合：
+
+```bash
+python3 Reproduction/scripts/09_merge_results_bundle.py \
+  --input reproduction_results.zip \
+  --output-dir report_assets/shared_results_merge
+```
+
+这个脚本会输出：
+
+```text
+report_assets/shared_results_merge/merged_results_summary.csv
+report_assets/shared_results_merge/merged_results_summary.json
+report_assets/shared_results_merge/confusion_matrices/
+```
+
+其中：
+
+- `merged_results_summary.csv` 会把每组实验的主要指标拉平到一张表
+- 混淆矩阵会拆成 `TN / FP / FN / TP` 四列写进 summary
+- 同时还会为每组实验单独导出 `val` 和 `test` 的混淆矩阵图片

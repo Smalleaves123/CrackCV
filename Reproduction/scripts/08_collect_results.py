@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from common import ROOT
+from Reproduction.src.utils.plotting import plot_confusion_matrix
 from Reproduction.src.utils.experiment import MODEL_PARAMETER_MILLIONS, REPRODUCTION_MODELS, STRATEGIES
 
 
@@ -40,11 +41,19 @@ def _collect_rows() -> list[dict]:
                     "val_recall": None if best_val is None else best_val.get("recall"),
                     "val_f1_score": None if best_val is None else best_val.get("f1_score"),
                     "val_jaccard_index": None if best_val is None else best_val.get("jaccard_index"),
+                    "val_cm_tn": None if best_val is None else best_val.get("confusion_matrix", [[None, None], [None, None]])[0][0],
+                    "val_cm_fp": None if best_val is None else best_val.get("confusion_matrix", [[None, None], [None, None]])[0][1],
+                    "val_cm_fn": None if best_val is None else best_val.get("confusion_matrix", [[None, None], [None, None]])[1][0],
+                    "val_cm_tp": None if best_val is None else best_val.get("confusion_matrix", [[None, None], [None, None]])[1][1],
                     "test_accuracy": None if test_metrics is None else test_metrics.get("accuracy"),
                     "test_precision": None if test_metrics is None else test_metrics.get("precision"),
                     "test_recall": None if test_metrics is None else test_metrics.get("recall"),
                     "test_f1_score": None if test_metrics is None else test_metrics.get("f1_score"),
                     "test_jaccard_index": None if test_metrics is None else test_metrics.get("jaccard_index"),
+                    "test_cm_tn": None if test_metrics is None else test_metrics.get("confusion_matrix", [[None, None], [None, None]])[0][0],
+                    "test_cm_fp": None if test_metrics is None else test_metrics.get("confusion_matrix", [[None, None], [None, None]])[0][1],
+                    "test_cm_fn": None if test_metrics is None else test_metrics.get("confusion_matrix", [[None, None], [None, None]])[1][0],
+                    "test_cm_tp": None if test_metrics is None else test_metrics.get("confusion_matrix", [[None, None], [None, None]])[1][1],
                     "run_dir": str(run_dir),
                 }
             )
@@ -121,11 +130,40 @@ def _plot_best_strategy(df: pd.DataFrame) -> None:
     plt.close()
 
 
+def _export_confusion_matrix_panels(df: pd.DataFrame) -> None:
+    figures_dir = ROOT / "report_assets" / "figures" / "confusion_matrices"
+    figures_dir.mkdir(parents=True, exist_ok=True)
+    for _, row in df.iterrows():
+        model_name = row["model"]
+        strategy = row["strategy"]
+        if pd.notna(row["test_cm_tn"]):
+            matrix = [
+                [int(row["test_cm_tn"]), int(row["test_cm_fp"])],
+                [int(row["test_cm_fn"]), int(row["test_cm_tp"])],
+            ]
+            plot_confusion_matrix(
+                matrix,
+                ["non_crack", "crack"],
+                figures_dir / f"{model_name}__{strategy}__test_confusion_matrix.png",
+            )
+        if pd.notna(row["val_cm_tn"]):
+            matrix = [
+                [int(row["val_cm_tn"]), int(row["val_cm_fp"])],
+                [int(row["val_cm_fn"]), int(row["val_cm_tp"])],
+            ]
+            plot_confusion_matrix(
+                matrix,
+                ["non_crack", "crack"],
+                figures_dir / f"{model_name}__{strategy}__val_confusion_matrix.png",
+            )
+
+
 def main() -> None:
     df = pd.DataFrame(_collect_rows())
     _save_summary_tables(df)
     if df.empty:
         return
+    _export_confusion_matrix_panels(df)
     _plot_grouped_bar(df, "test_accuracy", "model_accuracy_comparison.png", "Test Accuracy by Model and Strategy")
     _plot_grouped_bar(df, "test_f1_score", "model_f1_comparison.png", "Test F1 Score by Model and Strategy")
     _plot_parameter_vs_accuracy(df)
