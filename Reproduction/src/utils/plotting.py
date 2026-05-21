@@ -39,8 +39,8 @@ def plot_train_val_curve(
         return
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     plt.figure(figsize=(6.5, 4.5))
-    plt.plot(df[x], df[train_y], marker="o", label="Train")
-    plt.plot(df[x], df[val_y], marker="s", label="Val")
+    plt.plot(df[x], df[train_y], label="Train", linewidth=2.0)
+    plt.plot(df[x], df[val_y], label="Val", linewidth=2.0)
     plt.title(title)
     plt.xlabel(x)
     plt.ylabel(ylabel)
