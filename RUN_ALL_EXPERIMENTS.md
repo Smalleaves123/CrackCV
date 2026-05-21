@@ -72,6 +72,11 @@ python3 Reproduction/scripts/07_gradcam.py --config Reproduction/results/mobilen
 
 如果这里没问题，再进入全量实验。
 
+说明：
+
+- 当前 `01_prepare_dataset.py` 会把处理后的文件名改成带来源目录前缀的稳定名字，例如 `dataset_Positive_00001.jpg`
+- 如果你的 `data_work/processed/` 是用更早版本脚本生成的，文件名可能不同，先用 `ls data_work/processed/test/crack/` 看实际名字
+
 ## 5. 运行 Reproduction 全部主实验
 
 论文复现部分共有：
@@ -192,3 +197,4 @@ Addition/03_train_from_scratch/results/mobilenetv2_pretrained/
 - 使用 `--offline` 时，除非你已经准备好本地权重，否则模型会随机初始化
 - 如果你要完整保留论文对比意义，主实验、额外模型和迁移学习对比都建议保留预训练模式
 - 当前主汇总脚本只汇总 `Reproduction/`，`Addition/` 结果需要分别查看各自 `results/`
+- AMP 现在同时兼容新旧 PyTorch；如果你仍看到 `torch.amp` 或 `torch.cuda.amp` 相关 warning，说明远端机器跑的不是当前代码版本

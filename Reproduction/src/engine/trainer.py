@@ -7,12 +7,12 @@ from pathlib import Path
 import pandas as pd
 import torch
 from torch import nn
-from torch.cuda.amp import GradScaler, autocast
 from torch.optim import Adam, SGD
 from torch.utils.data import DataLoader
 
 from Reproduction.src.data.dataset import create_imagefolder
 from Reproduction.src.models.model_factory import create_model_from_config
+from Reproduction.src.utils.amp import autocast_context, build_grad_scaler
 from Reproduction.src.utils.checkpoints import save_checkpoint
 from Reproduction.src.utils.config import resolve_config_path, save_config
 from Reproduction.src.utils.metrics import compute_classification_metrics
@@ -39,7 +39,7 @@ class Trainer:
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = self._build_optimizer()
         self.use_amp = bool(self.config["training"].get("amp", False) and self.device == "cuda")
-        self.scaler = GradScaler(enabled=self.use_amp)
+        self.scaler = build_grad_scaler(enabled=self.use_amp)
         self.best_metric = float("-inf")
         self.history: list[dict] = []
 
@@ -76,7 +76,7 @@ class Trainer:
             inputs = inputs.to(self.device)
             labels = labels.to(self.device)
             with torch.set_grad_enabled(train):
-                with autocast(enabled=self.use_amp):
+                with autocast_context(enabled=self.use_amp):
                     outputs = self.model(inputs)
                     if isinstance(outputs, tuple):
                         outputs = outputs[0]
