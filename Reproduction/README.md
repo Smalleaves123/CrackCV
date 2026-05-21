@@ -47,3 +47,32 @@ export TIMM_HOME=./pretrained_weights/timm
 
 - 单跑一组：`02_train_single.py --config ... --strategy ...`
 - 批量跑几组：`04_train_all.py --models ... --strategies ...`
+
+常见批量训练场景：
+
+- 跑完单个模型的四组实验：
+
+```bash
+python3 Reproduction/scripts/04_train_all.py --models mobilenetv2 --epochs 100
+```
+
+- 跑完两个或多个模型各自的四组实验：
+
+```bash
+python3 Reproduction/scripts/04_train_all.py --models mobilenetv2 vgg16 vgg19 --epochs 100
+```
+
+- 只跑几个模型里的指定策略子集：
+
+```bash
+python3 Reproduction/scripts/04_train_all.py --models mobilenetv2 vgg16 --strategies full_finetune_aug linear_probe_no_aug --epochs 100
+```
+
+如果你想手动一个一个跑单模型的四组，也可以连续执行：
+
+```bash
+python3 Reproduction/scripts/02_train_single.py --config Reproduction/configs/mobilenetv2.yaml --strategy full_finetune_aug --epochs 100
+python3 Reproduction/scripts/02_train_single.py --config Reproduction/configs/mobilenetv2.yaml --strategy full_finetune_no_aug --epochs 100
+python3 Reproduction/scripts/02_train_single.py --config Reproduction/configs/mobilenetv2.yaml --strategy linear_probe_aug --epochs 100
+python3 Reproduction/scripts/02_train_single.py --config Reproduction/configs/mobilenetv2.yaml --strategy linear_probe_no_aug --epochs 100
+```

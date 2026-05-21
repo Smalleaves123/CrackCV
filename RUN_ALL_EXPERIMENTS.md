@@ -121,6 +121,87 @@ python3 Reproduction/scripts/08_collect_results.py
 python3 Reproduction/scripts/04_train_all.py --models mobilenetv2 vgg16 --strategies full_finetune_aug linear_probe_aug --epochs 100
 ```
 
+### 5.1 跑完单个模型的四组实验
+
+如果你的目标是把某一个模型的四种策略全部跑完，最直接的命令是：
+
+```bash
+python3 Reproduction/scripts/04_train_all.py --models mobilenetv2 --epochs 100
+```
+
+这里 `--models mobilenetv2` 表示只选这一个模型，而不传 `--strategies` 时会默认跑完全部四种策略：
+
+- `full_finetune_aug`
+- `full_finetune_no_aug`
+- `linear_probe_aug`
+- `linear_probe_no_aug`
+
+你也可以换成任何一个论文模型：
+
+```bash
+python3 Reproduction/scripts/04_train_all.py --models vgg16 --epochs 100
+python3 Reproduction/scripts/04_train_all.py --models xception --epochs 100
+```
+
+如果你更想手动一组一组跑，同一个模型的四组命令是：
+
+```bash
+python3 Reproduction/scripts/02_train_single.py --config Reproduction/configs/mobilenetv2.yaml --strategy full_finetune_aug --epochs 100
+python3 Reproduction/scripts/02_train_single.py --config Reproduction/configs/mobilenetv2.yaml --strategy full_finetune_no_aug --epochs 100
+python3 Reproduction/scripts/02_train_single.py --config Reproduction/configs/mobilenetv2.yaml --strategy linear_probe_aug --epochs 100
+python3 Reproduction/scripts/02_train_single.py --config Reproduction/configs/mobilenetv2.yaml --strategy linear_probe_no_aug --epochs 100
+```
+
+### 5.2 选几个模型，把它们各自的四组实验跑完
+
+如果你想选几个模型，并让每个模型都把四组策略跑完，做法是只传 `--models`，不要传 `--strategies`：
+
+```bash
+python3 Reproduction/scripts/04_train_all.py --models mobilenetv2 vgg16 vgg19 --epochs 100
+```
+
+这条命令等价于：
+
+- `mobilenetv2` 跑四组
+- `vgg16` 跑四组
+- `vgg19` 跑四组
+
+总共就是 `3 x 4 = 12` 组实验。
+
+再比如：
+
+```bash
+python3 Reproduction/scripts/04_train_all.py --models inceptionv3 inception_resnet_v2 xception --epochs 100
+```
+
+这会把这三个模型的四组全部跑完，总共 `12` 组。
+
+### 5.3 选几个模型，但只跑其中几种策略
+
+如果你不想每个模型都跑完四组，而是只跑某几种策略，再加上 `--strategies`：
+
+```bash
+python3 Reproduction/scripts/04_train_all.py \
+  --models mobilenetv2 vgg16 \
+  --strategies full_finetune_aug linear_probe_no_aug \
+  --epochs 100
+```
+
+这条命令总共会跑 `2 x 2 = 4` 组实验。
+
+### 5.4 先做小规模 smoke test
+
+如果你怕一下子排太多实验，可以先限制前几组：
+
+```bash
+python3 Reproduction/scripts/04_train_all.py \
+  --models mobilenetv2 vgg16 \
+  --epochs 3 \
+  --limit 2
+```
+
+这通常用来先验证训练链路、日志和结果目录有没有问题。
+
 如果你不想一次性跑 24 组，推荐把 `04_train_all.py` 当成“批量跑子集”的入口来用。例如：
 
 只跑一个模型的四种策略：
@@ -243,7 +324,7 @@ Addition/03_train_from_scratch/results/mobilenetv2_pretrained/
 
 1. `02_train_single.py` 先确认单组策略正确
 2. `04_train_all.py --models <one_model>` 跑单个模型的四组
-3. `04_train_all.py --models <two_or_three_models>` 逐步扩展
+3. `04_train_all.py --models <two_or_three_models>` 跑几个模型各自的四组
 4. 最后再补齐剩余模型，凑满 24 组
 
 ## 10. 常见注意事项
