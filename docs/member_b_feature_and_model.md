@@ -14,7 +14,7 @@ The feature extraction module outputs matched control points for affine or TPS w
 Run ORB feature matching:
 
 ```bash
-python3 src/feature_matching.py \
+python3 src/feature_alignment/feature_matching.py \
   --reference dataset/Positive/00214.jpg \
   --input dataset/Positive/00340.jpg \
   --output outputs/orb_matches.jpg \
@@ -29,7 +29,7 @@ The output point file contains:
 Run affine alignment with the matched points:
 
 ```bash
-python3 src/affine_baseline.py \
+python3 src/feature_alignment/affine_baseline.py \
   --reference dataset/Positive/00214.jpg \
   --input dataset/Positive/00340.jpg \
   --points outputs/orb_points.npz \
@@ -46,7 +46,7 @@ Directly matching two unrelated crack images is difficult because they are not p
 To verify the feature extraction pipeline under a controlled setting, `synthetic_feature_test.py` creates a known affine warp from one real crack image and then estimates matched points between the original and warped image.
 
 ```bash
-python3 src/synthetic_feature_test.py \
+python3 src/feature_alignment/synthetic_feature_test.py \
   --image dataset/Positive/00214.jpg \
   --method sift \
   --output-dir outputs/synthetic_sift
@@ -68,7 +68,7 @@ For the controlled affine test, SIFT gives the lowest affine matrix error. For u
 Run a quick CPU smoke test:
 
 ```bash
-python3 src/train_classifier.py \
+python3 src/crack_classification/train_classifier.py \
   --dataset dataset \
   --epochs 1 \
   --batch-size 32 \
@@ -79,7 +79,7 @@ python3 src/train_classifier.py \
 Run a longer training experiment:
 
 ```bash
-python3 src/train_classifier.py \
+python3 src/crack_classification/train_classifier.py \
   --dataset dataset \
   --epochs 10 \
   --batch-size 64 \
@@ -113,7 +113,7 @@ The classifier writes:
 Run inference with a saved checkpoint:
 
 ```bash
-python3 src/predict_classifier.py \
+python3 src/crack_classification/predict_classifier.py \
   --checkpoint outputs/classifier_smallcnn_10ep/best_model.pth \
   --image dataset/Positive/00214.jpg
 ```
