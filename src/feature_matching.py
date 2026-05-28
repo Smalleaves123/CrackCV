@@ -12,18 +12,39 @@ def read_image(path):
     return image
 
 
-def extract_orb_matches(reference_image, input_image, max_features, ratio):
-    ref_gray = cv2.cvtColor(reference_image, cv2.COLOR_BGR2GRAY)
-    inp_gray = cv2.cvtColor(input_image, cv2.COLOR_BGR2GRAY)
+def preprocess_gray(image, use_clahe):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    if not use_clahe:
+        return gray
 
-    orb = cv2.ORB_create(nfeatures=max_features)
-    ref_keypoints, ref_descriptors = orb.detectAndCompute(ref_gray, None)
-    inp_keypoints, inp_descriptors = orb.detectAndCompute(inp_gray, None)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    return clahe.apply(gray)
+
+
+def build_detector(method, max_features):
+    if method == "orb":
+        return cv2.ORB_create(nfeatures=max_features), cv2.NORM_HAMMING
+
+    if method == "sift":
+        if not hasattr(cv2, "SIFT_create"):
+            raise RuntimeError("SIFT is not available in this OpenCV build.")
+        return cv2.SIFT_create(nfeatures=max_features), cv2.NORM_L2
+
+    raise ValueError(f"Unsupported feature method: {method}")
+
+
+def extract_feature_matches(reference_image, input_image, method, max_features, ratio, use_clahe):
+    ref_gray = preprocess_gray(reference_image, use_clahe)
+    inp_gray = preprocess_gray(input_image, use_clahe)
+
+    detector, norm_type = build_detector(method, max_features)
+    ref_keypoints, ref_descriptors = detector.detectAndCompute(ref_gray, None)
+    inp_keypoints, inp_descriptors = detector.detectAndCompute(inp_gray, None)
 
     if ref_descriptors is None or inp_descriptors is None:
         return ref_keypoints or [], inp_keypoints or [], []
 
-    matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
+    matcher = cv2.BFMatcher(norm_type, crossCheck=False)
     knn_matches = matcher.knnMatch(inp_descriptors, ref_descriptors, k=2)
 
     good_matches = []
@@ -56,11 +77,13 @@ def draw_and_save_matches(reference_image, input_image, ref_keypoints, inp_keypo
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Extract matched ORB keypoints between an input image and a reference image.")
+    parser = argparse.ArgumentParser(description="Extract matched feature points between an input image and a reference image.")
     parser.add_argument("--reference", required=True, type=Path, help="Path to the reference image.")
     parser.add_argument("--input", required=True, type=Path, help="Path to the input image to be warped.")
     parser.add_argument("--output", default=Path("outputs/orb_matches.jpg"), type=Path, help="Path for the match visualization.")
     parser.add_argument("--points-out", default=Path("outputs/orb_points.npz"), type=Path, help="Path for matched point arrays.")
+    parser.add_argument("--method", default="orb", choices=["orb", "sift"], help="Feature detector and descriptor.")
+    parser.add_argument("--clahe", action="store_true", help="Apply CLAHE contrast enhancement before feature extraction.")
     parser.add_argument("--max-features", default=2000, type=int, help="Maximum number of ORB features.")
     parser.add_argument("--ratio", default=0.75, type=float, help="Lowe ratio threshold for match filtering.")
     parser.add_argument("--max-draw", default=80, type=int, help="Maximum number of matches to draw.")
@@ -69,13 +92,17 @@ def main():
     reference_image = read_image(args.reference)
     input_image = read_image(args.input)
 
-    ref_keypoints, inp_keypoints, matches = extract_orb_matches(
+    ref_keypoints, inp_keypoints, matches = extract_feature_matches(
         reference_image=reference_image,
         input_image=input_image,
+        method=args.method,
         max_features=args.max_features,
         ratio=args.ratio,
+        use_clahe=args.clahe,
     )
 
+    print(f"method: {args.method}")
+    print(f"clahe: {args.clahe}")
     print(f"reference keypoints: {len(ref_keypoints)}")
     print(f"input keypoints: {len(inp_keypoints)}")
     print(f"good matches: {len(matches)}")

@@ -30,6 +30,12 @@ def estimate_affine(input_points, reference_points):
     )
     if matrix is None:
         raise RuntimeError("Could not estimate affine transform from matched points.")
+
+    linear_part = matrix[:, :2]
+    scale = float(np.sqrt((linear_part ** 2).sum(axis=0).mean()))
+    if scale < 1e-3:
+        raise RuntimeError("Estimated affine transform is degenerate; matched points are not reliable enough.")
+
     return matrix, inliers
 
 

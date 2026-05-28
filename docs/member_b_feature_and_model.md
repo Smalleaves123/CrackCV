@@ -39,6 +39,30 @@ python3 src/affine_baseline.py \
 
 This validates the interface between feature extraction and geometric warping.
 
+### Feature Matching Experiment
+
+Directly matching two unrelated crack images is difficult because they are not paired views of the same wall. The first ORB baseline found only 3 good matches between `00214.jpg` and `00340.jpg`. After adding SIFT and CLAHE options, the best real-image result on this pair improved to 10 matches with SIFT, but affine estimation was still unreliable.
+
+To verify the feature extraction pipeline under a controlled setting, `synthetic_feature_test.py` creates a known affine warp from one real crack image and then estimates matched points between the original and warped image.
+
+```bash
+python3 src/synthetic_feature_test.py \
+  --image dataset/Positive/00214.jpg \
+  --method sift \
+  --output-dir outputs/synthetic_sift
+```
+
+Synthetic affine matching results:
+
+| Method | CLAHE | Good Matches | RANSAC Inliers | Inlier Ratio | Affine Error |
+| --- | --- | ---: | ---: | ---: | ---: |
+| ORB | no | 516 | 511 | 0.9903 | 0.2504 |
+| ORB | yes | 471 | 457 | 0.9703 | 0.1393 |
+| SIFT | no | 240 | 237 | 0.9875 | 0.0465 |
+| SIFT | yes | 390 | 389 | 0.9974 | 0.0983 |
+
+For the controlled affine test, SIFT gives the lowest affine matrix error. For unrelated real crack images, the current dataset is better suited for classification than geometric warping, because the images do not provide true reference/input correspondence.
+
 ## Deep Learning Model
 
 Run a quick CPU smoke test:
