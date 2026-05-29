@@ -16,6 +16,38 @@ CLASS_TO_INDEX = {"Negative": 0, "Positive": 1}
 INDEX_TO_CLASS = {0: "non-crack", 1: "crack"}
 
 
+class CustomCrackCNN(nn.Module):
+    def __init__(self, num_classes=2):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 16, kernel_size=3, padding=1),
+            nn.BatchNorm2d(16),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.AdaptiveAvgPool2d((1, 1)),
+        )
+        self.classifier = nn.Sequential(
+            nn.Dropout(0.25),
+            nn.Linear(128, num_classes),
+        )
+
+    def forward(self, x):
+        x = self.features(x)
+        x = torch.flatten(x, 1)
+        return self.classifier(x)
+
+
 class BrickworkDataset(Dataset):
     def __init__(self, dataset_dir, image_size, augment=False):
         self.dataset_dir = Path(dataset_dir)
@@ -91,6 +123,11 @@ def import_timm():
 
 
 def build_model(model_name, pretrained=False):
+    if model_name == "custom_cnn":
+        if pretrained:
+            raise ValueError("custom_cnn is self-built and does not support ImageNet pretrained weights.")
+        return CustomCrackCNN(num_classes=2)
+
     weights = None
     if model_name == "vgg16":
         weights = models.VGG16_Weights.IMAGENET1K_V1 if pretrained else None
@@ -268,6 +305,8 @@ def save_test_outputs(metrics, output_dir):
 def parse_models(raw):
     if raw == "all":
         return ["vgg16", "vgg19", "mobilenet_v2", "inception_v3", "inception_resnet_v2", "xception"]
+    if raw == "all_with_custom":
+        return ["custom_cnn", "vgg16", "vgg19", "mobilenet_v2", "inception_v3", "inception_resnet_v2", "xception"]
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
