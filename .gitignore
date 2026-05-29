@@ -13,6 +13,7 @@ checkpoints/
 *.pt
 *.ckpt
 *.onnx
+!brickwork_model_comparison/results/**/best_model.pth
 
 .DS_Store
 .ipynb_checkpoints/

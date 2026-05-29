@@ -34,20 +34,31 @@ source .venv/bin/activate
 pip install -r brickwork_model_comparison/requirements-cpu.txt
 ```
 
-## Quick Custom CNN Experiment
+## Reproduce Current Submitted Results
 
-This runs our self-built model without downloading pretrained weights:
+The committed experiment compares our self-built `custom_cnn` with `mobilenet_v2`.
+Both run for 20 epochs without downloading pretrained weights:
 
 ```bash
 python3 brickwork_model_comparison/src/train_compare_models.py \
   --dataset dataset \
   --models custom_cnn \
-  --epochs 10 \
-  --batch-size 64 \
+  --epochs 20 \
+  --batch-size 32 \
   --image-size 128 \
   --strategy e2e_aug \
   --lr 0.001 \
-  --output-dir outputs/brickwork_custom_cnn_10ep
+  --output-dir outputs/brickwork_two_models_20ep
+
+python3 brickwork_model_comparison/src/train_compare_models.py \
+  --dataset dataset \
+  --models mobilenet_v2 \
+  --epochs 20 \
+  --batch-size 32 \
+  --image-size 128 \
+  --strategy e2e_aug \
+  --lr 0.001 \
+  --output-dir outputs/brickwork_two_models_20ep
 ```
 
 ## Paper-Style Training
@@ -89,6 +100,15 @@ For each model, the script saves:
 It also saves:
 
 - `summary.csv`
+
+## Submitted Results
+
+The current submitted artifacts are stored in `brickwork_model_comparison/results/`.
+
+| Model | Accuracy | Precision | Recall | F1-score | Jaccard |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| custom_cnn | 0.9400 | 0.9464 | 0.9400 | 0.9398 | 0.8864 |
+| mobilenet_v2 | 0.9400 | 0.9428 | 0.9400 | 0.9399 | 0.8866 |
 
 ## Current Practical Note
 

@@ -2,7 +2,7 @@
 
 ## Goal
 
-Test our self-built CNN on the brickwork crack classification task and keep the same evaluation metrics used in the reference paper:
+This experiment tests a self-built CNN against a lightweight CNN backbone on the brickwork crack classification dataset. The saved metrics match the indicators requested by the reference paper:
 
 - Accuracy
 - Precision
@@ -28,9 +28,11 @@ The experiment uses a stratified split:
 | Validation | 100 | 50 | 50 |
 | Test | 100 | 50 | 50 |
 
-## Model
+## Models
 
-`custom_cnn` is our self-built lightweight CNN:
+### `custom_cnn`
+
+`custom_cnn` is our self-built lightweight CNN. It is trained from scratch, without ImageNet pretrained weights.
 
 ```text
 Conv-BN-ReLU-MaxPool
@@ -41,16 +43,17 @@ Dropout
 Linear(128 -> 2)
 ```
 
-It is trained from scratch, without ImageNet pretrained weights.
+### `mobilenet_v2`
+
+`mobilenet_v2` is used as the comparison backbone. In this CPU experiment, it is also trained from scratch so that the comparison does not depend on downloading pretrained weights.
 
 ## Training Setting
 
 ```text
-model: custom_cnn
 strategy: e2e_aug
 pretrained: false
-epochs: 10
-batch size: 64
+epochs: 20
+batch size: 32
 image size: 128 x 128
 learning rate: 0.001
 optimizer: Adam
@@ -58,49 +61,66 @@ loss: CrossEntropyLoss
 augmentation: horizontal flip, vertical flip, rotation, brightness jitter
 ```
 
-Command:
+Commands:
 
 ```bash
 python3 brickwork_model_comparison/src/train_compare_models.py \
   --dataset dataset \
   --models custom_cnn \
-  --epochs 10 \
-  --batch-size 64 \
+  --epochs 20 \
+  --batch-size 32 \
   --image-size 128 \
   --strategy e2e_aug \
   --lr 0.001 \
-  --output-dir outputs/brickwork_custom_cnn_10ep
+  --output-dir outputs/brickwork_two_models_20ep
+
+python3 brickwork_model_comparison/src/train_compare_models.py \
+  --dataset dataset \
+  --models mobilenet_v2 \
+  --epochs 20 \
+  --batch-size 32 \
+  --image-size 128 \
+  --strategy e2e_aug \
+  --lr 0.001 \
+  --output-dir outputs/brickwork_two_models_20ep
 ```
+
+## Final Test Metrics
+
+| Model | Accuracy | Precision | Recall | F1-score | Jaccard | Test Loss |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| custom_cnn | 0.9400 | 0.9464 | 0.9400 | 0.9398 | 0.8864 | 0.1728 |
+| mobilenet_v2 | 0.9400 | 0.9428 | 0.9400 | 0.9399 | 0.8866 | 0.1401 |
 
 ## Training Curve Summary
 
-| Epoch | Train Acc | Val Acc | Val F1 |
-| ---: | ---: | ---: | ---: |
-| 1 | 0.6880 | 0.5000 | 0.3333 |
-| 2 | 0.7920 | 0.5000 | 0.3333 |
-| 3 | 0.8220 | 0.5000 | 0.3333 |
-| 4 | 0.8360 | 0.5000 | 0.3333 |
-| 5 | 0.8560 | 0.5000 | 0.3333 |
-| 6 | 0.8840 | 0.5500 | 0.4357 |
-| 7 | 0.8840 | 0.6500 | 0.6011 |
-| 8 | 0.8860 | 0.8000 | 0.7917 |
-| 9 | 0.9060 | 0.7900 | 0.7803 |
-| 10 | 0.9400 | 0.8500 | 0.8465 |
+| Model | Final Train Acc | Best Val Acc | Final Val Acc | Final Val F1 |
+| --- | ---: | ---: | ---: | ---: |
+| custom_cnn | 0.9680 | 0.9700 | 0.9700 | 0.9700 |
+| mobilenet_v2 | 0.9420 | 0.9600 | 0.9300 | 0.9300 |
 
-## Test Metrics
+## Saved Artifacts
 
-| Model | Accuracy | Precision | Recall | F1-score | Jaccard |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| custom_cnn | 0.8000 | 0.8571 | 0.8000 | 0.7917 | 0.6571 |
+The final artifacts are committed under `brickwork_model_comparison/results/`:
 
-The confusion matrix image is saved locally at:
-
-```text
-outputs/brickwork_custom_cnn_10ep/custom_cnn/confusion_matrix.png
-```
+| Path | Content |
+| --- | --- |
+| `results/summary.csv` | Combined metrics for both models |
+| `results/custom_cnn/training_history.csv` | 20-epoch training log |
+| `results/custom_cnn/test_metrics.csv` | Final test metrics |
+| `results/custom_cnn/loss_curve.png` | Loss curve |
+| `results/custom_cnn/confusion_matrix.png` | Confusion matrix |
+| `results/custom_cnn/best_model.pth` | Best checkpoint |
+| `results/mobilenet_v2/training_history.csv` | 20-epoch training log |
+| `results/mobilenet_v2/test_metrics.csv` | Final test metrics |
+| `results/mobilenet_v2/loss_curve.png` | Loss curve |
+| `results/mobilenet_v2/confusion_matrix.png` | Confusion matrix |
+| `results/mobilenet_v2/best_model.pth` | Best checkpoint |
 
 ## Interpretation
 
-The self-built CNN learns meaningful crack features within 10 epochs. Validation accuracy rises from `0.50` to `0.85`, and the test accuracy reaches `0.80`.
+Both models reach `0.94` test accuracy and about `0.94` F1-score. This is enough for the course requirement that asks for a trainable model, training curves, optimization records, and paper-style evaluation metrics.
 
-This result is lower than the best paper setting because the paper relies on ImageNet pretrained backbones and longer early-stopping training. The current experiment is still useful as a custom lightweight baseline that can later be compared against VGG16, VGG19, MobileNetV2, InceptionV3, InceptionResNetV2, and Xception.
+The custom CNN result is especially useful for the "self-built model testing" responsibility: it proves that our own architecture can learn crack features from the dataset instead of only relying on an existing model. MobileNetV2 is kept as the comparison model because it is a known lightweight CNN backbone and provides a stronger reference point.
+
+Full six-model pretrained comparison is still possible, but it is much heavier on a CPU machine and requires stable pretrained weight downloads. For this submission, the committed result focuses on the two completed and reproducible 20-epoch experiments.
